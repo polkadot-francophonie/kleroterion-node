@@ -53,7 +53,7 @@ impl system::Config for Test {
 	type OnSetCode = ();
 }
 
-impl pallet_tkleroterion::Config for Test {
+impl pallet_kleroterion::Config for Test {
 	type Event = Event;
 }
 

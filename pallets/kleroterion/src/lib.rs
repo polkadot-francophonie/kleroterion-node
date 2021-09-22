@@ -66,7 +66,7 @@ pub mod pallet {
 		/// storage and emits an event. This function must be dispatched by a signed extrinsic.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 
-		// To be improved, the tribe names are passed here as 'strings' under the form of Vec<u8>.
+		// To be improved? the tribe names are passed here as 'str' under the form of Vec<u8>.
 		// As multiple tribes can be passed, we pass Vec<Vec<u8>>
 		pub fn open_jury_call(origin: OriginFor<T>, tribes: Vec<Vec<u8>>, selections: u8, start_after: i64) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
