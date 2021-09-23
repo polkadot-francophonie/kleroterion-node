@@ -17,7 +17,16 @@ pub mod pallet {
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
 	use sp_std::vec::Vec;
+	pub use crate::types::JuryCallID;
 
+	type AccountOf<T> = <T as frame_system::Config>::AccountId;
+	#[derive(Clone, Encode, Decode, PartialEq)]
+	pub struct JuryCall<T: Config> {
+		// Tribes
+		// Tribes+Candidates
+		pub start_after: i64,
+		pub owner: AccountOf<T>,
+	}
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -31,11 +40,24 @@ pub mod pallet {
 
 	// The pallet's runtime storage items.
 	// https://substrate.dev/docs/en/knowledgebase/runtime/storage
+
+	// Properties of a Jury Call
+	// id
+	// owner
+	// not start before date
+	// list of tribes
+	// map id:canditates to tribe
+
 	#[pallet::storage]
-	#[pallet::getter(fn something)]
-	// Learn more about declaring storage items:
-	// https://substrate.dev/docs/en/knowledgebase/runtime/storage#declaring-storage-items
-	pub type Something<T> = StorageValue<_, u32>;
+	#[pallet::getter(fn jury_call)]
+	/// Stores a Jury Call's unique parameters.
+	pub(super) type JuryCalls<T: Config> = StorageMap<_, Twox64Concat, JuryCallID , JuryCall<T>>;
+
+
+
+	#[pallet::storage]
+	#[pallet::getter(fn jury_call_cnt)]
+	pub(super) type JuryCallCnt<T: Config> = StorageValue<_, JuryCallID, ValueQuery>;
 
 	// Pallets use events to inform users when important changes are made.
 	// https://substrate.dev/docs/en/knowledgebase/runtime/events
@@ -51,6 +73,8 @@ pub mod pallet {
 	// Errors inform users that something went wrong.
 	#[pallet::error]
 	pub enum Error<T> {
+		/// Handles arithemtic overflow when incrementing the Jury Call counter.
+		JuryCallCntOverflow,
 		/// Error names should be descriptive.
 		NoneValue,
 		/// Errors should have helpful documentation associated with them.
@@ -76,11 +100,21 @@ pub mod pallet {
 
 			// Check that timestamp is in the future compared to current blocks timestamp
 			// will need the pallet_timestamp probably
-			// Return error if not
+			// Return error if not in the future.
+
+            // Assign a new id
+			let new_cnt = Self::jury_call_cnt()
+							.checked_add(1)
+  							.ok_or(<Error<T>>::JuryCallCntOverflow)?;
+
+			let jury_call = JuryCall::<T> {
+				start_after: start_after,
+				owner: who.clone(),
+			};
 
 			// Update storage.
-			// 
-			// <Something<T>>::put(something);
+			<JuryCallCnt<T>>::put(new_cnt);
+			<JuryCalls<T>>::insert(new_cnt, jury_call);
 
 			// Emit an event to report the Jury Call.
 			// Self::deposit_event(Event::SomethingStored(something, who));
@@ -88,23 +122,23 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// An example dispatchable that may throw a custom error.
-		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1,1))]
-		pub fn cause_error(origin: OriginFor<T>) -> DispatchResult {
-			let _who = ensure_signed(origin)?;
+		// /// An example dispatchable that may throw a custom error.
+		// #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1,1))]
+		// pub fn cause_error(origin: OriginFor<T>) -> DispatchResult {
+		// 	let _who = ensure_signed(origin)?;
 
-			// Read a value from storage.
-			match <Something<T>>::get() {
-				// Return an error if the value has not been set.
-				None => Err(Error::<T>::NoneValue)?,
-				Some(old) => {
-					// Increment the value read from storage; will error in the event of overflow.
-					let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
-					// Update the value in storage with the incremented result.
-					<Something<T>>::put(new);
-					Ok(())
-				},
-			}
-		}
+		// 	// Read a value from storage.
+		// 	match <Something<T>>::get() {
+		// 		// Return an error if the value has not been set.
+		// 		None => Err(Error::<T>::NoneValue)?,
+		// 		Some(old) => {
+		// 			// Increment the value read from storage; will error in the event of overflow.
+		// 			let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
+		// 			// Update the value in storage with the incremented result.
+		// 			<Something<T>>::put(new);
+		// 			Ok(())
+		// 		},
+		// 	}
+		// }
 	}
 }
