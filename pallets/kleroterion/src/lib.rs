@@ -14,7 +14,11 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
+	use frame_support::{
+			dispatch::DispatchResult, 
+			pallet_prelude::*,
+			traits::UnixTime,
+		};
 	use frame_system::pallet_prelude::*;
 	use sp_std::vec::Vec;
 	pub use crate::types::{
@@ -28,7 +32,7 @@ pub mod pallet {
 		pub tribes:  Vec<Vec<u8>>,
 		pub selections: Selections,
 		// Tribes+Candidates
-		pub start_after: i64,
+		pub start_after: u64,
 		pub owner: AccountOf<T>,
 	}
 	/// Configure the pallet by specifying the parameters and types on which it depends.
@@ -36,6 +40,7 @@ pub mod pallet {
 	pub trait Config: frame_system::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type TimeProvider: UnixTime;  //Cf https://stackoverflow.com/questions/68262293/substrate-frame-v2-how-to-use-pallet-timestamp
 	}
 
 	#[pallet::pallet]
@@ -81,6 +86,8 @@ pub mod pallet {
 		JuryCallCntOverflow,
 		/// Selections must be greater than zero
 		ZeroSelections,
+		/// Start_After should be in the future
+		StartAfterInThePast,
 		/// Error names should be descriptive.
 		NoneValue,
 		/// Errors should have helpful documentation associated with them.
@@ -98,7 +105,7 @@ pub mod pallet {
 
 		// To be improved? the tribe names are passed here as 'str' under the form of Vec<u8>.
 		// As multiple tribes can be passed, we pass Vec<Vec<u8>>
-		pub fn open_jury_call(origin: OriginFor<T>, tribes: Vec<Vec<u8>>, selections: Selections, start_after: i64) -> DispatchResult {
+		pub fn open_jury_call(origin: OriginFor<T>, tribes: Vec<Vec<u8>>, selections: Selections, start_after: u64) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			// This function will return an error if the extrinsic is not signed.
 			// https://substrate.dev/docs/en/knowledgebase/runtime/origin
@@ -111,8 +118,8 @@ pub mod pallet {
 			
 
 			// Check that timestamp is in the future compared to current blocks timestamp
-			// will need the pallet_timestamp probably
-			// Return error if not in the future.
+			let time_now: u64 = T::TimeProvider::now().as_secs();
+			if time_now >= start_after { Err(Error::<T>::StartAfterInThePast)? }
 
             // Assign a new id
 			let new_cnt = Self::jury_call_cnt()
