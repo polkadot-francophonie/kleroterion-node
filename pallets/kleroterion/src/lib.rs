@@ -17,12 +17,16 @@ pub mod pallet {
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
 	use sp_std::vec::Vec;
-	pub use crate::types::JuryCallID;
+	pub use crate::types::{
+		JuryCallID,
+		Selections,
+	};
 
 	type AccountOf<T> = <T as frame_system::Config>::AccountId;
 	#[derive(Clone, Encode, Decode, PartialEq)]
 	pub struct JuryCall<T: Config> {
-		// Tribes
+		pub tribes:  Vec<Vec<u8>>,
+		pub selections: Selections,
 		// Tribes+Candidates
 		pub start_after: i64,
 		pub owner: AccountOf<T>,
@@ -73,8 +77,10 @@ pub mod pallet {
 	// Errors inform users that something went wrong.
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Handles arithemtic overflow when incrementing the Jury Call counter.
+		/// Arithemtic overflow when incrementing the Jury Call counter.
 		JuryCallCntOverflow,
+		/// Selections must be greater than zero
+		ZeroSelections,
 		/// Error names should be descriptive.
 		NoneValue,
 		/// Errors should have helpful documentation associated with them.
@@ -92,11 +98,17 @@ pub mod pallet {
 
 		// To be improved? the tribe names are passed here as 'str' under the form of Vec<u8>.
 		// As multiple tribes can be passed, we pass Vec<Vec<u8>>
-		pub fn open_jury_call(origin: OriginFor<T>, tribes: Vec<Vec<u8>>, selections: u8, start_after: i64) -> DispatchResult {
+		pub fn open_jury_call(origin: OriginFor<T>, tribes: Vec<Vec<u8>>, selections: Selections, start_after: i64) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			// This function will return an error if the extrinsic is not signed.
 			// https://substrate.dev/docs/en/knowledgebase/runtime/origin
 			let who = ensure_signed(origin)?;
+
+			// Check tribes are distinct
+
+			// Check selections > 0
+			if selections == 0 { Err(Error::<T>::ZeroSelections)? }
+			
 
 			// Check that timestamp is in the future compared to current blocks timestamp
 			// will need the pallet_timestamp probably
@@ -108,6 +120,8 @@ pub mod pallet {
   							.ok_or(<Error<T>>::JuryCallCntOverflow)?;
 
 			let jury_call = JuryCall::<T> {
+				tribes: tribes,
+				selections: selections,
 				start_after: start_after,
 				owner: who.clone(),
 			};

@@ -8,13 +8,10 @@ use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_call
 use frame_system::RawOrigin;
 
 benchmarks! {
-	do_something {
-		let s in 0 .. 100;
-		let caller: T::AccountId = whitelisted_caller();
-	}: _(RawOrigin::Signed(caller), s)
-	verify {
-		assert_eq!(Something::<T>::get(), Some(s));
-	}
+	fn bench_open_jury_call_100(b: &mut Bencher) {
+		let tribes = vec![b"Tribe1".to_vec(), b"Tribe2".to_vec()];
+		Kleroterion::open_jury_call(Origin::signed(1), tribes.clone(), 1, UX_TS_20300101)
+    });
 }
 
 impl_benchmark_test_suite!(Template, crate::mock::new_test_ext(), crate::mock::Test);
