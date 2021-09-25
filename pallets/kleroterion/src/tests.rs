@@ -2,8 +2,8 @@ use crate::{mock::*, Error};
 use frame_support::{assert_noop, assert_ok, assert_err	};
 use frame_system::pallet_prelude::*;
 
-const UX_TS_20300101: i64 = 1893452400;
-const UX_TS_20100101: i64 = 1262300400;
+const UX_TS_20300101: u64 = 1893452400;
+const UX_TS_20100101: u64 = 1262300400;
 
 #[test]
 fn it_fails_with_no_origin() {

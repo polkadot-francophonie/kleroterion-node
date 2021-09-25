@@ -276,6 +276,7 @@ impl pallet_template::Config for Runtime {
 /// Configure the pallet-kleroterion in pallets/kleroterion.
 impl pallet_kleroterion::Config for Runtime {
 	type Event = Event;
+	type TimeProvider = pallet_timestamp::Pallet<Runtime>; // https://stackoverflow.com/questions/68262293/substrate-frame-v2-how-to-use-pallet-timestamp
 }
 
 
