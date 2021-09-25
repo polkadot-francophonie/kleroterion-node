@@ -1,6 +1,10 @@
 use crate as pallet_kleroterion;
-use frame_support::parameter_types;
+use frame_support::{
+	parameter_types,
+	traits::UnixTime,
+};	
 use frame_system as system;
+use pallet_timestamp;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
@@ -10,6 +14,7 @@ use sp_runtime::{
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
+	
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
 	pub enum Test where
@@ -18,6 +23,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Kleroterion: pallet_kleroterion::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -53,8 +59,16 @@ impl system::Config for Test {
 	type OnSetCode = ();
 }
 
+impl pallet_timestamp::Config for Test {
+    type Moment = u64;
+    type OnTimestampSet = ();
+    type MinimumPeriod = ();
+    type WeightInfo = ();
+}
+
 impl pallet_kleroterion::Config for Test {
 	type Event = Event;
+	type TimeProvider = pallet_timestamp::Pallet<Test>;
 }
 
 // Build genesis storage according to the mock runtime.
