@@ -1,4 +1,5 @@
 use crate as pallet_kleroterion;
+use crate::Error;
 use frame_support::{
 	parameter_types,
 	traits::UnixTime,
@@ -13,7 +14,7 @@ use sp_runtime::{
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
-
+pub type TestError = Error<Test>;
 	
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
