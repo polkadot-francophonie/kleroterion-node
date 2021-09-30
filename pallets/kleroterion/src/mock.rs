@@ -1,8 +1,9 @@
 use crate as pallet_kleroterion;
 use crate::Error;
+
 use frame_support::{
 	parameter_types,
-	traits::UnixTime,
+	traits::{OnFinalize, OnInitialize},
 };	
 use frame_system as system;
 use pallet_timestamp;
@@ -12,9 +13,16 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 };
 
+pub const UX_TS_20300101: u64 = 1893452400;
+pub const INIT_TIMESTAMP: u64 = 1632873600; //29/09/2021
+pub const UX_TS_20100101: u64 = 1262300400;
+pub const BLOCK_TIME: u64 = 1000;
+
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 pub type TestError = Error<Test>;
+pub type TestEvent = Event;
+
 	
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -48,7 +56,7 @@ impl system::Config for Test {
 	type AccountId = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
-	type Event = Event;
+	type Event = TestEvent;
 	type BlockHashCount = BlockHashCount;
 	type Version = ();
 	type PalletInfo = PalletInfo;
@@ -68,11 +76,28 @@ impl pallet_timestamp::Config for Test {
 }
 
 impl pallet_kleroterion::Config for Test {
-	type Event = Event;
+	type Event = TestEvent;
 	type TimeProvider = pallet_timestamp::Pallet<Test>;
 }
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
+}
+
+/// Run until a particular block.
+pub fn run_to_block(n: u64) {
+	while System::block_number() < n {
+		// let time_now: u64 = Timestamp::now();
+		if System::block_number() > 1 {
+			System::on_finalize(System::block_number());
+ 		} 
+		else {
+			Timestamp::set_timestamp(INIT_TIMESTAMP);
+		}
+		Timestamp::set_timestamp(System::block_number() * BLOCK_TIME + INIT_TIMESTAMP);
+		// let time_now: u64 = Timestamp::now();
+		System::set_block_number(System::block_number() + 1);
+		System::on_initialize(System::block_number());
+	}
 }

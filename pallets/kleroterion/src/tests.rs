@@ -1,18 +1,39 @@
 use crate::{mock::*, Error};
-use frame_support::{assert_noop, assert_ok, assert_err	};
+use frame_support::{assert_ok, assert_err};
 use frame_system::pallet_prelude::*;
 
-const UX_TS_20300101: u64 = 1893452400;
-const UX_TS_20100101: u64 = 1262304000;
 
+type Event = crate::Event<Test>;
+
+// Fails Probably due to bad definition of expected_event?
+#[test]
+fn it_check_open_jury_call_event() {
+	new_test_ext().execute_with(|| {
+		// Dispatch the call
+		let tribe_names = vec![b"Tribe1".to_vec()];
+		let _res = Kleroterion::open_jury_call(Origin::signed(1), tribe_names, 0, UX_TS_20300101);
+
+		// construct event that should be emitted in the method call
+		let expected_event = TestEvent::Kleroterion(Event::JuryCallOpened(1, 1));
+
+		// Check event by iterating through array of `EventRecord`s
+		assert!(System::events().iter().any(|a| a.event == expected_event));
+	});
+}
+
+// THis test fails. The returned error does not match the format of the Test Error. 
+// thread 'tests::it_fails_with_no_origin' panicked at 'assertion failed: `(left == right)`
+//   left: `Err(BadOrigin)`,
+//  right: `Err(Module { index: 2, error: 0, message: Some("BadOrigin") })`',
 #[test]
 fn it_fails_with_no_origin() {
 	new_test_ext().execute_with(|| {
 
 		let tribes = vec![b"Tribe1".to_vec()];
 
+		let res = Kleroterion::open_jury_call(Origin::none(), tribes, 5, UX_TS_20300101);
 		// Dispatch a signed open_jury_call extrinsic.
-		assert!(Kleroterion::open_jury_call(Origin::none(), tribes, 5, UX_TS_20300101).is_err());
+		assert_err!(res,TestError::BadOrigin);
 	});
 }
 
@@ -86,15 +107,18 @@ fn it_reject_duplicate_tribes() {
 }
 
 // Test keeps failing but should pass ???
-// #[test]
-// fn it_reject_start_after_in_the_past() {
-// 	new_test_ext().execute_with(|| {
+// Reading the doc on pallet_timestamp, this seems to be dut to the fact that 
+// in tests, the initial timestamp of the genesis block is not set. So time_now in open_jury_call returns 0
+#[test]
+fn it_reject_start_after_in_the_past() {
 
-// 		let tribe_names = vec![b"Tribe1".to_vec()];
-// 		// Dispatch a signed extrinsic.
-// 		assert_noop!(Kleroterion::open_jury_call(Origin::signed(1), tribe_names, 1, UX_TS_20100101),Error::<Test>::StartAfterInThePast);
-// 	});
-// }
+	new_test_ext().execute_with(|| {
+		run_to_block(10);
+		let tribe_names = vec![b"Tribe1".to_vec()];
+		// Dispatch a signed extrinsic.
+		assert_err!(Kleroterion::open_jury_call(Origin::signed(1), tribe_names, 1, UX_TS_20100101),Error::<Test>::StartAfterInThePast);
+	});
+}
 
 
 #[test]

@@ -93,6 +93,8 @@ pub mod pallet {
 	// Errors inform users that something went wrong.
 	#[pallet::error]
 	pub enum Error<T> {
+		/// Invalid Signer
+		BadOrigin,
 		/// Arithemtic overflow when incrementing the Jury Call counter.
 		JuryCallCntOverflow,
 		/// Cannot use tTwo identical tribe names.
@@ -110,6 +112,7 @@ pub mod pallet {
 	impl<T: Config> Printable for Error<T> {
 		fn print(&self) {
 		  match self {
+			Error::BadOrigin => "BadOrigin".print(),  
 			Error::JuryCallCntOverflow => "Jury Call Value Overflowed".print(),
 			Error::DuplicateTribes => "Duplicate tribe names entered".print(),
 			Error::ZeroSelections => "Zero selections not allowed".print(),
@@ -143,6 +146,8 @@ pub mod pallet {
 
 			// Check that timestamp is in the future compared to current blocks timestamp
 			let time_now: u64 = T::TimeProvider::now().as_secs();
+			print(time_now);
+			print(start_after);
 			if time_now >= start_after {
 				print(Error::<T>::StartAfterInThePast);
 				Err(Error::<T>::StartAfterInThePast)? 
